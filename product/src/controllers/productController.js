@@ -23,24 +23,45 @@ class ProductController {
    * @param {Object} res - Response object để trả về kết quả
    * @param {Function} next - Middleware tiếp theo
    */
+  // async createProduct(req, res, next) {
+  //   try {
+  //     // Kiểm tra token xác thực
+  //     const token = req.headers.authorization;
+  //     if (!token) {
+  //       return res.status(401).json({ message: "Unauthorized" });
+  //     }
+      
+  //     // Tạo instance Product từ dữ liệu request
+  //     const product = new Product(req.body);
+
+  //     // Validate dữ liệu sản phẩm
+  //     const validationError = product.validateSync();
+  //     if (validationError) {
+  //       return res.status(400).json({ message: validationError.message });
+  //     }
+
+  //     // Lưu sản phẩm vào database với timeout 30s
+  //     await product.save({ timeout: 30000 });
+
+  //     res.status(201).json(product);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({ message: "Server error" });
+  //   }
+  // }
   async createProduct(req, res, next) {
     try {
-      // Kiểm tra token xác thực
       const token = req.headers.authorization;
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
-      // Tạo instance Product từ dữ liệu request
       const product = new Product(req.body);
 
-      // Validate dữ liệu sản phẩm
       const validationError = product.validateSync();
       if (validationError) {
         return res.status(400).json({ message: validationError.message });
       }
 
-      // Lưu sản phẩm vào database với timeout 30s
       await product.save({ timeout: 30000 });
 
       res.status(201).json(product);

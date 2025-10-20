@@ -11,11 +11,8 @@ const config = require("./config");
  */
 class App {
   constructor() {
-    // Khởi tạo ứng dụng Express
     this.app = express();
-    // Kết nối đến MongoDB
     this.connectDB();
-    // Thiết lập RabbitMQ consumer để lắng nghe đơn hàng
     this.setupOrderConsumer();
   }
 
@@ -47,7 +44,6 @@ class App {
   async setupOrderConsumer() {
     console.log("Connecting to RabbitMQ...");
   
-    // Delay 10s để đợi RabbitMQ khởi động (trong Docker)
     setTimeout(async () => {
       try {
         const amqpServer = "amqp://rabbitmq:5672";
@@ -55,30 +51,23 @@ class App {
         console.log("Connected to RabbitMQ");
         const channel = await connection.createChannel();
         
-        // Tạo queue "orders" nếu chưa tồn tại
         await channel.assertQueue("orders");
   
-        // Lắng nghe messages từ queue "orders"
         channel.consume("orders", async (data) => {
           console.log("Consuming ORDER service");
-          // Parse dữ liệu đơn hàng từ message
           const { products, username, orderId } = JSON.parse(data.content);
   
-          // Tạo đơn hàng mới
           const newOrder = new Order({
             products,
             user: username,
-            totalPrice: products.reduce((acc, product) => acc + product.price, 0), // Tính tổng giá
+            totalPrice: products.reduce((acc, product) => acc + product.price, 0),
           });
   
-          // Lưu đơn hàng vào database
           await newOrder.save();
   
-          // Gửi ACK để xác nhận đã xử lý message
           channel.ack(data);
           console.log("Order saved to DB and ACK sent to ORDER queue");
   
-          // Gửi thông tin đơn hàng đã hoàn thành về Product Service
           const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
           channel.sendToQueue(
             "products",

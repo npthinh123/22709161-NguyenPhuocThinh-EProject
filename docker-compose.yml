@@ -1,0 +1,109 @@
+version: '3.8'
+services:
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "3003:3003"
+    depends_on:
+      auth:
+        condition: service_healthy
+      product:
+        condition: service_healthy
+      order:
+        condition: service_healthy
+    environment:
+      - PORT=3003
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  auth:
+    build: ./auth
+    container_name: auth
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGODB_AUTH_URI=mongodb://mongo/auth
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  product:
+    build: ./product
+    container_name: product
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGODB_PRODUCT_URI=mongodb://mongo/products
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order:
+    build: ./order
+    container_name: order
+    ports:
+      - "3002:3002"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      - PORT=3002
+      - MONGODB_ORDER_URI=mongodb://mongo:27017/orders
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s

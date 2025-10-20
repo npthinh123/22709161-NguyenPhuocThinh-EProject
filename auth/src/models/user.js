@@ -7,13 +7,12 @@ const mongoose = require("mongoose");
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true // Username là bắt buộc
+    required: true
   },
   password: {
     type: String,
-    required: true // Password là bắt buộc (sẽ được hash trước khi lưu)
+    required: true
   }
 });
 
-// Xuất model User dựa trên UserSchema
 module.exports = mongoose.model("User", UserSchema);

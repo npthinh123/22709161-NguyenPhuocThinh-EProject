@@ -14,7 +14,7 @@ class MessageBroker {
   static async connect() {
     try {
       // Kết nối đến RabbitMQ server
-      const connection = await amqp.connect(config.rabbitMQUrl);
+      const connection = await amqp.connect(config.rabbitMQURI);
       const channel = await connection.createChannel();
 
       // Tạo queue nếu chưa tồn tại, durable=true để queue tồn tại sau khi restart

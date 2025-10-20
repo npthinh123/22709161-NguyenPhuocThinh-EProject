@@ -23,6 +23,7 @@ class MessageBroker {
       try {
         // Kết nối đến RabbitMQ server (sử dụng service name trong Docker)
         const connection = await amqp.connect("amqp://rabbitmq:5672");
+        // const connection = await amqp.connect("amqp://localhost:5672");
         this.channel = await connection.createChannel();
         
         // Tạo queue "products" nếu chưa tồn tại
