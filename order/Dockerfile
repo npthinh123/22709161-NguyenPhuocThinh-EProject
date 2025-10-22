@@ -1,9 +1,6 @@
 # Order Service Dockerfile
 FROM node:18-alpine
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
-
 WORKDIR /app
 
 # Copy package files

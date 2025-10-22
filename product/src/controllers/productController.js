@@ -2,18 +2,11 @@ const Product = require("../models/product");
 const messageBroker = require("../utils/messageBroker");
 const uuid = require('uuid');
 
-/**
- * Lớp ProductController xử lý các API request liên quan đến sản phẩm
- * Đây là tầng Controller trong kiến trúc Clean Architecture
- * Chịu trách nhiệm xử lý HTTP requests, gọi business logic và trả về responses
- */
 class ProductController {
 
   constructor() {
-    // Bind các method để đảm bảo 'this' context đúng
     this.createOrder = this.createOrder.bind(this);
     this.getOrderStatus = this.getOrderStatus.bind(this);
-    // Map để lưu trữ trạng thái đơn hàng trong memory
     this.ordersMap = new Map();
   }
 
