@@ -9,17 +9,31 @@ const { expect } = chai;
 
 describe("User Authentication", () => {
   let app;
+  let server;
 
   before(async () => {
+    // Sử dụng port 0 để hệ thống tự động chọn port ngẫu nhiên
+    process.env.PORT = 0;
+    
     app = new App();
     await app.connectDB();
-    app.start();
+    server = app.start();
+    
+    // Lấy port thực tế được assigned
+    const address = server.address();
+    const actualPort = address.port;
+    console.log(`Test server running on port ${actualPort}`);
   });
 
   after(async () => {
-    await app.authController.authService.deleteTestUsers();
+    try {
+      await app.authController.authService.deleteTestUsers();
+    } catch (err) {
+      console.log("Error deleting test users:", err.message);
+    }
+    
+    await app.stop();
     await app.disconnectDB();
-    app.stop();
   });
 
   describe("POST /register", () => {

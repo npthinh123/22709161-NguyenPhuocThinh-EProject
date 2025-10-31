@@ -66,11 +66,13 @@ class App {
   }
 
   /**
-   * Khởi động server Auth trên port 3000
+   * Khởi động server Auth trên port 3000 (hoặc port từ env)
    * Server sẽ lắng nghe các request xác thực từ client
    */
   start() {
-    this.server = this.app.listen(3000, () => console.log("Server started on port 3000"));
+    const PORT = process.env.PORT || 3000;
+    this.server = this.app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+    return this.server;
   }
 
   /**
@@ -78,9 +80,14 @@ class App {
    * Được sử dụng khi shutdown ứng dụng hoặc trong testing
    */
   async stop() {
-    await mongoose.disconnect();
-    this.server.close();
-    console.log("Server stopped");
+    if (this.server) {
+      await new Promise((resolve) => {
+        this.server.close(() => {
+          console.log("Server stopped");
+          resolve();
+        });
+      });
+    }
   }
 }
 

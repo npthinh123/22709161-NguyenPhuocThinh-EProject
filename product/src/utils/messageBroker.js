@@ -18,21 +18,28 @@ class MessageBroker {
   async connect() {
     console.log("Connecting to RabbitMQ...");
 
-    // Delay 20s để đợi RabbitMQ service sẵn sàng
-    setTimeout(async () => {
-      try {
-        // Kết nối đến RabbitMQ server (sử dụng service name trong Docker)
-        const connection = await amqp.connect("amqp://rabbitmq:5672");
-        // const connection = await amqp.connect("amqp://localhost:5672");
-        this.channel = await connection.createChannel();
-        
-        // Tạo queue "products" nếu chưa tồn tại
-        await this.channel.assertQueue("products");
-        console.log("RabbitMQ connected");
-      } catch (err) {
-        console.error("Failed to connect to RabbitMQ:", err.message);
-      }
-    }, 20000);
+    // Trong môi trường test, không delay
+    const delay = process.env.NODE_ENV === 'test' ? 0 : 20000;
+
+    return new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          // Kết nối đến RabbitMQ server (sử dụng service name trong Docker)
+          const rabbitURI = process.env.RABBITMQ_URI || "amqp://rabbitmq:5672";
+          const connection = await amqp.connect(rabbitURI);
+          // const connection = await amqp.connect("amqp://localhost:5672");
+          this.channel = await connection.createChannel();
+          
+          // Tạo queue "products" nếu chưa tồn tại
+          await this.channel.assertQueue("products");
+          console.log("RabbitMQ connected");
+          resolve();
+        } catch (err) {
+          console.error("Failed to connect to RabbitMQ:", err.message);
+          reject(err);
+        }
+      }, delay);
+    });
   }
 
   /**

@@ -1,0 +1,94 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Create .env file for auth
+      run: |
+        echo "MONGODB_URI=mongodb://localhost:27017/auth_db_test" >> auth/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret_key_12345' }}" >> auth/.env
+    
+    - name: Create .env file for product
+      run: |
+        echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/product_db_test" >> product/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret_key_12345' }}" >> product/.env
+        echo "RABBITMQ_URI=amqp://localhost:5672" >> product/.env
+        echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER || 'testuser' }}" >> product/.env
+        echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD || 'password' }}" >> product/.env
+
+    - name: Install root dependencies
+      run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      
+    - name: Install auth dependencies
+      working-directory: ./auth
+      run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      
+    - name: Install product dependencies
+      working-directory: ./product
+      run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+    
+    - name: Wait for MongoDB
+      run: |
+        echo "Waiting for MongoDB to be ready..."
+        sleep 5
+    
+    - name: Wait for RabbitMQ
+      run: |
+        echo "Waiting for RabbitMQ to be ready..."
+        sleep 10
+    
+    - name: Run tests for auth service
+      working-directory: ./auth
+      run: npm test
+      
+    - name: Start auth service in background
+      working-directory: ./auth
+      run: |
+        npm start &
+        echo $! > auth.pid
+        sleep 5
+      
+    - name: Run tests for product service
+      working-directory: ./product
+      run: npm test
+      
+    - name: Stop auth service
+      if: always()
+      run: |
+        if [ -f auth/auth.pid ]; then
+          kill $(cat auth/auth.pid) || true
+        fi

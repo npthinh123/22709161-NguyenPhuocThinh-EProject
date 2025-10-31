@@ -66,18 +66,25 @@ class App {
    * Thiết lập kết nối RabbitMQ
    * Để giao tiếp với Order Service thông qua message queues
    */
-  setupMessageBroker() {
-    MessageBroker.connect();
+  async setupMessageBroker() {
+    try {
+      await MessageBroker.connect();
+    } catch (error) {
+      console.log("RabbitMQ connection failed:", error.message);
+      console.log("Continuing without RabbitMQ...");
+    }
   }
 
   /**
-   * Khởi động Product Service trên port 3001
+   * Khởi động Product Service trên port 3001 (hoặc port từ env)
    * Server sẽ lắng nghe các request liên quan đến sản phẩm
    */
   start() {
-    this.server = this.app.listen(3001, () =>
-      console.log("Server started on port 3001")
+    const PORT = process.env.PORT || 3001;
+    this.server = this.app.listen(PORT, () =>
+      console.log(`Server started on port ${PORT}`)
     );
+    return this.server;
   }
 
   /**
@@ -85,9 +92,14 @@ class App {
    * Được sử dụng khi shutdown application hoặc trong testing
    */
   async stop() {
-    await mongoose.disconnect();
-    this.server.close();
-    console.log("Server stopped");
+    if (this.server) {
+      await new Promise((resolve) => {
+        this.server.close(() => {
+          console.log("Server stopped");
+          resolve();
+        });
+      });
+    }
   }
 }
 

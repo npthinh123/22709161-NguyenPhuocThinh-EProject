@@ -16,32 +16,6 @@ class ProductController {
    * @param {Object} res - Response object để trả về kết quả
    * @param {Function} next - Middleware tiếp theo
    */
-  // async createProduct(req, res, next) {
-  //   try {
-  //     // Kiểm tra token xác thực
-  //     const token = req.headers.authorization;
-  //     if (!token) {
-  //       return res.status(401).json({ message: "Unauthorized" });
-  //     }
-      
-  //     // Tạo instance Product từ dữ liệu request
-  //     const product = new Product(req.body);
-
-  //     // Validate dữ liệu sản phẩm
-  //     const validationError = product.validateSync();
-  //     if (validationError) {
-  //       return res.status(400).json({ message: validationError.message });
-  //     }
-
-  //     // Lưu sản phẩm vào database với timeout 30s
-  //     await product.save({ timeout: 30000 });
-
-  //     res.status(201).json(product);
-  //   } catch (error) {
-  //     console.error(error);
-  //     res.status(500).json({ message: "Server error" });
-  //   }
-  // }
   async createProduct(req, res, next) {
     try {
       const token = req.headers.authorization;
@@ -114,7 +88,7 @@ class ProductController {
       // Long polling: chờ đến khi đơn hàng được xử lý xong
       let order = this.ordersMap.get(orderId);
       while (order.status !== 'completed') {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // đợi 1 giây trước khi check lại
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
         order = this.ordersMap.get(orderId);
       }
   
@@ -151,21 +125,24 @@ class ProductController {
    */
   async getProducts(req, res, next) {
     try {
-      // Kiểm tra token xác thực
       const token = req.headers.authorization;
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
-      // Lấy tất cả sản phẩm từ database
       const products = await Product.find({});
-
       res.status(200).json(products);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server error" });
     }
   }
+
+
+
+
+
+
+
 }
 
 module.exports = ProductController;
